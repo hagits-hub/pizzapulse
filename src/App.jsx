@@ -193,13 +193,13 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
         // try full parse first
         parsed = JSON.parse(rawText.replace(/```json|```/g, "").trim())
       } catch(parseErr) {
-        // if truncated, extract whatever complete objects we can
-        const matches = rawText.match(/\{"speaker":\s*"[^"]+",\s*"text":\s*"(?:[^"\]|\.)*"\}/g)
-        if (matches && matches.length > 0) {
-          parsed = matches.map(m => JSON.parse(m))
-          console.log("Recovered", parsed.length, "messages from truncated response")
-        } else {
-          throw new Error("לא הצלחתי לחלץ הודעות מהתשובה")
+        try {
+          const clean = rawText.replace(/```json|```/g, "").trim()
+          const lastGood = clean.lastIndexOf("},")
+          const fixed = lastGood > 0 ? clean.substring(0, lastGood + 1) + "]" : "[]"
+          parsed = JSON.parse(fixed)
+        } catch(e2) {
+          throw new Error("שגיאת פירסור — נסי שוב")
         }
       }
 
