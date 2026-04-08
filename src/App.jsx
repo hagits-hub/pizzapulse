@@ -1,6 +1,123 @@
 import { useState, useRef, useEffect } from "react"
 import { ALL_PERSONAS, REGIONS, socioColor } from "./personas.js"
 
+function ApiKeySetup({ onSuccess }) {
+  const [key, setKey] = useState("")
+  const [status, setStatus] = useState("idle") // idle | checking | error | success
+  const [errorMsg, setErrorMsg] = useState("")
+  const [show, setShow] = useState(false)
+
+  const testKey = async () => {
+    if (!key.trim().startsWith("sk-ant-")) {
+      setErrorMsg("המפתח צריך להתחיל ב־sk-ant-")
+      setStatus("error")
+      return
+    }
+    setStatus("checking")
+    setErrorMsg("")
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": key.trim(),
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 10,
+          messages: [{ role: "user", content: "say ok" }]
+        })
+      })
+      const data = await res.json()
+      if (data.error) {
+        setErrorMsg(data.error.message || "מפתח לא תקין")
+        setStatus("error")
+      } else {
+        setStatus("success")
+        setTimeout(() => onSuccess(key.trim()), 1000)
+      }
+    } catch (e) {
+      setErrorMsg("שגיאת חיבור — בדקי את המפתח")
+      setStatus("error")
+    }
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#0f0a00", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "'Segoe UI', Tahoma, sans-serif", direction: "rtl" }}>
+      <div style={{ width: "100%", maxWidth: 520 }}>
+        <div style={{ textAlign: "center", marginBottom: 40 }}>
+          <div style={{ fontSize: 56, marginBottom: 16 }}>🍕</div>
+          <h1 style={{ fontSize: 36, fontWeight: 900, margin: 0, background: "linear-gradient(135deg,#ff6b35,#ffd700)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>PizzaPulse IL</h1>
+          <p style={{ color: "#888", marginTop: 8, fontSize: 15 }}>פלטפורמת קבוצות מיקוד וירטואליות</p>
+        </div>
+
+        <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,107,53,0.25)", borderRadius: 20, padding: 32 }}>
+          <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 6, color: "#fff" }}>🔑 הזן מפתח API</div>
+          <div style={{ color: "#888", fontSize: 13, lineHeight: 1.7, marginBottom: 24 }}>
+            הכלי משתמש ב-Anthropic Claude API. כל משתמש מזין מפתח משלו — המפתח שלך נשאר פרטי לחלוטין.
+          </div>
+
+          <div style={{ background: "rgba(255,107,53,0.08)", border: "1px solid rgba(255,107,53,0.2)", borderRadius: 12, padding: 16, marginBottom: 24 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#ff6b35", marginBottom: 10 }}>איך מקבלים מפתח? (חינם)</div>
+            {[
+              ["1", "היכנסי ל־", "console.anthropic.com", "https://console.anthropic.com"],
+              ["2", "הירשמי ולכי ל־", "API Keys → Create Key", null],
+              ["3", "העתיקי את המפתח", "(מתחיל ב-sk-ant-...)", null],
+            ].map(([n, text, bold, link]) => (
+              <div key={n} style={{ display: "flex", gap: 10, marginBottom: 8, alignItems: "flex-start" }}>
+                <span style={{ background: "#ff6b35", color: "#fff", borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>{n}</span>
+                <span style={{ fontSize: 13, color: "#ccc" }}>
+                  {text}
+                  {link
+                    ? <a href={link} target="_blank" rel="noreferrer" style={{ color: "#ff6b35", textDecoration: "none", fontWeight: 700 }}>{bold}</a>
+                    : <strong style={{ color: "#fff" }}>{bold}</strong>}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ position: "relative", marginBottom: 14 }}>
+            <input
+              type={show ? "text" : "password"}
+              value={key}
+              onChange={e => { setKey(e.target.value); setStatus("idle") }}
+              placeholder="sk-ant-api03-..."
+              style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: `2px solid ${status === "error" ? "#e74c3c" : status === "success" ? "#2ecc71" : "rgba(255,107,53,0.3)"}`, borderRadius: 10, color: "#fff", fontSize: 14, padding: "12px 48px 12px 14px", outline: "none", boxSizing: "border-box", direction: "ltr", letterSpacing: 1, transition: "border-color 0.2s" }}
+              onKeyDown={e => e.key === "Enter" && testKey()}
+            />
+            <button onClick={() => setShow(s => !s)} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#666", cursor: "pointer", fontSize: 16 }}>
+              {show ? "🙈" : "👁️"}
+            </button>
+          </div>
+
+          {status === "error" && (
+            <div style={{ background: "rgba(231,76,60,0.1)", border: "1px solid rgba(231,76,60,0.3)", borderRadius: 8, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#e74c3c" }}>
+              ❌ {errorMsg}
+            </div>
+          )}
+
+          {status === "success" && (
+            <div style={{ background: "rgba(46,204,113,0.1)", border: "1px solid rgba(46,204,113,0.3)", borderRadius: 8, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#2ecc71" }}>
+              ✅ המפתח תקין! מכניס אותך...
+            </div>
+          )}
+
+          <button onClick={testKey} disabled={!key.trim() || status === "checking" || status === "success"}
+            style={{ width: "100%", padding: "14px", background: (!key.trim() || status === "checking" || status === "success") ? "#1a1a1a" : "linear-gradient(135deg,#c0392b,#ff6b35)", border: "none", borderRadius: 10, color: (!key.trim() || status === "checking") ? "#444" : "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", boxShadow: key.trim() && status === "idle" ? "0 4px 20px rgba(255,107,53,0.35)" : "none", transition: "all 0.2s" }}>
+            {status === "checking" ? "⏳ בודק מפתח..." : status === "success" ? "✅ מצוין!" : "🚀 כניסה לפלטפורמה"}
+          </button>
+
+          <div style={{ textAlign: "center", marginTop: 16, fontSize: 12, color: "#555" }}>
+            המפתח נשמר רק בדפדפן שלך ולא נשלח לשום שרת חיצוני
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const SAMPLES = [
   'פיצה שווארמה עם טחינה וחמוצים — מה אתם חושבים?',
   'מחיר פיצה אישית יעלה ל-65 ש"ח — תמשיכו להזמין?',
@@ -11,6 +128,8 @@ const SAMPLES = [
 ]
 
 export default function App() {
+  const [apiKey, setApiKey] = useState(() => sessionStorage.getItem("ppApiKey") || "")
+
   const [view, setView] = useState("home")
   const [regionFilter, setRegionFilter] = useState("הכל")
   const [selected, setSelected] = useState([])
@@ -45,10 +164,17 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
 5. החזר JSON בלבד: [{"speaker":"שם","text":"הודעה"}]
 אל תוסיף כלום מחוץ ל-JSON`
 
+    const apiHeaders = {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    }
+
     try {
       const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders,
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 1000,
@@ -71,7 +197,7 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
       setTyping("מנתח תוצאות...")
       const sr = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders,
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 1000,
@@ -89,6 +215,8 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
     }
     setRunning(false)
   }
+
+  if (!apiKey) return <ApiKeySetup onSuccess={(k) => { sessionStorage.setItem("ppApiKey", k); setApiKey(k) }} />
 
   const vColor = summary?.verdict === "חיובי" ? "#2ecc71" : summary?.verdict === "שלילי" ? "#e74c3c" : "#f39c12"
 
