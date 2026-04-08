@@ -183,7 +183,17 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
         })
       })
       const d = await r.json()
-      const parsed = JSON.parse(d.content[0].text.replace(/```json|```/g, "").trim())
+      console.log("=== FULL API RESPONSE ===", JSON.stringify(d))
+      if (d.error) throw new Error(d.error.message || JSON.stringify(d.error))
+      if (!d.content || !d.content[0]) throw new Error("תשובה ריקה מה-API: " + JSON.stringify(d))
+      const rawText = d.content[0].text
+      console.log("=== RAW TEXT ===", rawText)
+      let parsed
+      try {
+        parsed = JSON.parse(rawText.replace(/```json|```/g, "").trim())
+      } catch(parseErr) {
+        throw new Error("שגיאת JSON: " + rawText.substring(0, 200))
+      }
 
       for (const msg of parsed) {
         const persona = chosen.find(p => p.name === msg.speaker) || chosen[0]
@@ -210,8 +220,9 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
       setSummary(JSON.parse(sd.content[0].text.replace(/```json|```/g, "").trim()))
       setTyping(null)
     } catch (e) {
-      console.error(e)
-      setTyping(null)
+      console.error("PizzaPulse error:", e)
+      setTyping("❌ שגיאה: " + e.message)
+      setTimeout(() => setTyping(null), 5000)
     }
     setRunning(false)
   }
