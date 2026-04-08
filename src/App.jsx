@@ -177,7 +177,7 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
         headers: apiHeaders,
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
+          max_tokens: 4000,
           system: sys,
           messages: [{ role: "user", content: `נושא: "${question}"\nצור שיחה של 10-14 הודעות.` }]
         })
@@ -190,9 +190,17 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
       console.log("=== RAW TEXT ===", rawText)
       let parsed
       try {
+        // try full parse first
         parsed = JSON.parse(rawText.replace(/```json|```/g, "").trim())
       } catch(parseErr) {
-        throw new Error("שגיאת JSON: " + rawText.substring(0, 200))
+        // if truncated, extract whatever complete objects we can
+        const matches = rawText.match(/\{"speaker":\s*"[^"]+",\s*"text":\s*"(?:[^"\]|\.)*"\}/g)
+        if (matches && matches.length > 0) {
+          parsed = matches.map(m => JSON.parse(m))
+          console.log("Recovered", parsed.length, "messages from truncated response")
+        } else {
+          throw new Error("לא הצלחתי לחלץ הודעות מהתשובה")
+        }
       }
 
       for (const msg of parsed) {
@@ -210,7 +218,7 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
         headers: apiHeaders,
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
+          max_tokens: 2000,
           system: `סכם קבוצת מיקוד. החזר JSON בלבד:
 {"verdict":"חיובי/שלילי/מעורב","score":1-10,"mainInsight":"תובנה","pros":["..."],"cons":["..."],"segments":{"supporters":["שמות"],"opponents":["שמות"]},"recommendation":"המלצה לפיצה האט"}`,
           messages: [{ role: "user", content: `שאלה: "${question}"\n${parsed.map(m => `${m.speaker}: ${m.text}`).join("\n")}` }]
