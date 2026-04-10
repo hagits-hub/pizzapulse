@@ -352,12 +352,23 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
             <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>
               כל הפרסונות <span style={{ color: "#ff6b35" }}>({ALL_PERSONAS.length})</span>
             </h2>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               {REGIONS.map(r => (
                 <button key={r} onClick={() => setRegionFilter(r)} style={{ background: regionFilter === r ? "#ff6b35" : "rgba(255,255,255,0.05)", border: `1px solid ${regionFilter === r ? "#ff6b35" : "rgba(255,255,255,0.12)"}`, color: regionFilter === r ? "#fff" : "#aaa", padding: "7px 16px", borderRadius: 20, cursor: "pointer", fontSize: 13, transition: "all 0.2s" }}>
                   {r}
                 </button>
               ))}
+              <div style={{ width: 1, height: 24, background: "rgba(255,255,255,0.1)", margin: "0 4px" }} />
+              <button onClick={() => setSelected(filtered.map(p => p.id))}
+                style={{ background: "rgba(255,107,53,0.15)", border: "1px solid #ff6b35", color: "#ff6b35", padding: "7px 16px", borderRadius: 20, cursor: "pointer", fontSize: 13, fontWeight: 700, transition: "all 0.2s" }}>
+                ✓ בחר הכל
+              </button>
+              {selected.length > 0 && (
+                <button onClick={() => setSelected([])}
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.15)", color: "#aaa", padding: "7px 16px", borderRadius: 20, cursor: "pointer", fontSize: 13, transition: "all 0.2s" }}>
+                  ✕ נקה הכל ({selected.length})
+                </button>
+              )}
             </div>
           </div>
 
