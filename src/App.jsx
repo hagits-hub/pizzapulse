@@ -291,39 +291,37 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
     if (!q) return
     setExpertAnswer({ status: "searching", text: "", analysis: null })
     try {
-      // Step 1: web search
+      // Step 1: search
       const searchRes = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST", headers: apiHeaders,
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 500,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
-          messages: [{ role: "user", content: `pizza trends Europe global 2025: "${q.substring(0,60)}"` }]
+          messages: [{ role: "user", content: `pizza trends Europe 2025: ${q.substring(0,40)}` }]
         })
       })
       const searchData = await searchRes.json()
       if (searchData.error) throw new Error(searchData.error.message)
       setExpertAnswer(prev => ({ ...prev, status: "thinking" }))
 
-      // Step 2: structured analysis
+      // Step 2: analyze
       const toolUseBlocks = (searchData.content || []).filter(b => b.type === "tool_use")
       const msgs = [
-        { role: "user", content: `pizza trends Europe global 2025: "${q.substring(0,60)}"` },
+        { role: "user", content: `pizza trends Europe 2025: ${q.substring(0,40)}` },
         { role: "assistant", content: searchData.content }
       ]
       if (toolUseBlocks.length > 0) {
-        msgs.push({ role: "user", content: toolUseBlocks.map(b => ({ type: "tool_result", tool_use_id: b.id, content: "תוצאות זמינות" })) })
+        msgs.push({ role: "user", content: toolUseBlocks.map(b => ({ type: "tool_result", tool_use_id: b.id, content: "done" })) })
       }
-      msgs.push({ role: "user", content: `בהתבסס על החיפוש, ענה על: "${q}"
-החזר JSON בלבד:
-{"opinion":"חוות דעת 3-4 משפטים בעברית רהוטה","globalTrend":"טרנד עולמי אחד רלוונטי","score":1-10,"pros":["יתרון1","יתרון2","יתרון3"],"cons":["חיסרון1","חיסרון2","חיסרון3"],"verdict":"חיובי/שלילי/מעורב"}` })
+      msgs.push({ role: "user", content: `ענה על: "${q}". החזר JSON: {"opinion":"3 משפטים עברית","globalTrend":"טרנד אחד","score":1-10,"pros":["א","ב","ג"],"cons":["א","ב","ג"],"verdict":"חיובי/שלילי/מעורב"}` })
 
       const ansRes = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST", headers: apiHeaders,
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 700,
-          system: `אתה מארקו פראטי, מומחה פיצה מנאפולי. מתמחה בשוק האירופי, בקיא בטרנדים גלובליים. כותב ל-Gambero Rosso. כתוב עברית רהוטה וטבעית — אל תתרגם מאנגלית. היה ישיר ודעתני.`,
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 500,
+          system: "אתה מארקו פראטי, מומחה פיצה מנאפולי. כתוב עברית רהוטה. היה ישיר.",
           messages: msgs
         })
       })
@@ -602,7 +600,7 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
             )}
             <button onClick={runAllExperts} disabled={expertsRunning || (!expertQuestion.trim() && !question.trim())}
               style={{ width: "100%", padding: 13, background: expertsRunning ? "#1a1a1a" : "linear-gradient(135deg,#7d5a00,#e8b84b)", border: "none", borderRadius: 10, color: expertsRunning ? "#444" : "#000", fontSize: 15, fontWeight: 800, cursor: expertsRunning ? "not-allowed" : "pointer" }}>
-              {expertsRunning ? "⏳ מארקו מחפש ברשת ומנתח..." : "🌐 שלח למארקו + חיפוש ברשת"}
+              {expertsRunning ? "⏳ מארקו מחפש ברשת..." : "🌐 שלח למארקו + חיפוש ברשת"}
             </button>
           </div>
 
