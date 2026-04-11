@@ -106,25 +106,27 @@ export default function App() {
     setMessages([]); setSummary(null); setRunning(true)
     const chosen = ALL_PERSONAS.filter(p => selected.includes(p.id))
 
-    const pollSys = `אתה מנחה סקר צרכנים בשוק הפיצות הישראלי.
-מידע על פיצה האט: רשת עם מעל 100 סניפים. כשרות רובין בירושלים ובני ברק. כשרות בית יוסף בגוש דן, שרון, דרום, צפון. סניפים ללא כשרות ביישובים ערביים.
+    const pollSys = `אתה מנחה סקר צרכנים אמיתי בשוק הפיצות הישראלי.
 
-פרסונות:
-${chosen.map(p => p.name + " " + p.age + ", " + p.location + ", " + p.religion).join(" | ")}
+מידע על פיצה האט: מעל 100 סניפים. כשרות רובין בירושלים/בני ברק. בית יוסף בגוש דן/שרון/דרום/צפון. ללא כשרות ביישובים ערביים.
 
-חוקים:
-- כל פרסונה עונה 2-3 משפטים — אמיתיים, ספציפיים, בשפה שלה
-- כל פרסונה נותנת ציון 1-10 (1=שונא מאוד, 10=אוהב מאוד)
-- ישראלים מדברים ישר וסוערים — מחיר, חוויה אישית, השוואה למתחרים
-- אסור להיות דיפלומטי — אם גרוע, אומרים גרוע בפירוש
-- החזר JSON בלבד: [{"name":"שם","score":ציון,"text":"2-3 משפטים"}]
+הפרסונות — כל אחת עם אישיות ייחודית:
+${chosen.map(p => `• ${p.name} (${p.age}, ${p.location}, ${p.religion}, ${p.job}): ${p.personality}`).join("\n")}
+
+עקרונות קריטיים:
+- כל פרסונה מדברת בקול הייחודי שלה — לפי האישיות, הרקע, ומה שחשוב לה
+- תגובה של 3-5 משפטים — לא קצרה מדי! פרסונה מדברת בפירוט על: מה היא מרגישה, למה, מה מטריד אותה, מה מושך אותה
+- ישראלים אמיתיים: מדברים על מחיר ספציפי, משווים לדומינוס/ספייסי, מספרים על חוויה קודמת
+- אסור לסיים ב"אבל" — אם שלילי, שלילי עד הסוף. אם חיובי, חיובי עד הסוף
+- ציון 1-10: 1-3=שנאה, 4-5=ספקנות, 6=אדישות, 7-8=עניין, 9-10=התלהבות
+- החזר JSON בלבד: [{"name":"שם","score":ציון,"text":"3-5 משפטים אמיתיים"}]
 אל תוסיף כלום מחוץ ל-JSON`
 
     try {
       const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST", headers: apiHeaders,
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 4000, system: pollSys,
-          messages: [{ role: "user", content: `שאלה: "${question}" — תן משפט + ציון לכל ${chosen.length} הפרסונות.` }] })
+          messages: [{ role: "user", content: `שאלה: "${question}" — תן תגובה אותנטית ומפורטת לכל ${chosen.length} הפרסונות.` }] })
       })
       const d = await r.json()
       if (d.error) throw new Error(d.error.message)
@@ -369,6 +371,9 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
         </button>
         <button style={S.navBtn(view === "focusgroup")} onClick={() => setView("focusgroup")}>
           קבוצת מיקוד{selected.length > 0 && <span style={S.badge}>{selected.length}</span>}
+        </button>
+        <button style={S.navBtn(view === "experts")} onClick={() => setView("experts")}>
+          🌍 מומחה אירופי
         </button>
       </nav>
 
