@@ -83,6 +83,7 @@ export default function App() {
   const [running, setRunning] = useState(false)
   const [expandedPersona, setExpandedPersona] = useState(null)
   const [expertAnswers, setExpertAnswers] = useState({}) // {expertId: {status, text}}
+  const [expertSummary, setExpertSummary] = useState(null)
   const [expertQuestion, setExpertQuestion] = useState("")
   const [expertsRunning, setExpertsRunning] = useState(false)
   const bottomRef = useRef(null)
@@ -132,15 +133,26 @@ export default function App() {
 פרסונות:
 ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.personality}`).join("\n")}
 
-חוקים לשיחה — חשוב מאוד:
-1. כל פרסונה מדברת בגוף ראשון בשפה האותנטית שלה
-2. **כל פרסונה מביעה עמדה חדה וברורה — לא "מצד אחד... מצד שני"**
-3. חובה שתהיה מחלוקת אמיתית — לפחות 2 פרסונות יתנגדו בחריפות
-4. פרסונות ספקניות יטילו ספק קונקרטי: "כמה זה עולה? מה במרכיבים? זה ינסה לי את..."
-5. פרסונות נלהבות יהיו נלהבות באמת: "אני הזמנתי כבר! ממש אהבתי!"
-6. שימוש בדוגמאות ספציפיות: מחירים אמיתיים, חוויות אישיות, השוואות למתחרים (דומינוס, ספייסי)
-7. ריאליזם ישראלי מלא — "אחי זה 70 שקל ליד, אני לא פראייר"
-8. החזר JSON בלבד: [{"speaker":"שם","text":"הודעה"}]
+עקרונות קריטיים לשיחה:
+
+אופי הדמויות:
+- כל פרסונה היא אדם אמיתי עם דעה אמיתית — לא שגריר של פיצה האט
+- ישראלים אומרים מה הם חושבים בלי פילטר: "זה גרוע", "לא הייתי קונה", "מה זה הבולשיט הזה"
+- **אסור לחפש את הצד החיובי בכל דבר** — אם הרעיון גרוע, הוא גרוע
+- אם פרסונה לא אוהבת משהו — היא לא מוסיפה "אבל אולי יש לזה קהל..."
+- אם פרסונה מרוצה — היא לא מוסיפה "אבל צריך להיזהר..."
+
+דינמיקה של שיחה:
+- פרסונות מגיבות אחת לשניה: "מה שדנה אמרה — זה בדיוק הבעיה"
+- יש ויכוחים אמיתיים, לא פוליטיקאים
+- מחיר = שיקול מרכזי לרוב הפרסונות ("70 שקל?! אני לא פראייר")
+- השוואות למתחרים: דומינוס, ספייסי, פיצה מקומית
+- חוויות אישיות ספציפיות: "פעם הזמנתי ו..."
+
+כלל ברזל: ציון השיחה חייב לשקף את הטון האמיתי.
+אם 70% מהמשפטים שליליים — זו שיחה שלילית. לא מעורבת.
+
+החזר JSON בלבד: [{"speaker":"שם","text":"הודעה"}]
 אל תוסיף כלום מחוץ ל-JSON`
 
     try {
@@ -169,17 +181,20 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
       const sr = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST", headers: apiHeaders,
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2000,
-          system: `אתה אנליסט שוק ביקורתי. סכם את קבוצת המיקוד בכנות מלאה.
+          system: `אתה אנליסט שוק קשוח וישראלי. תפקידך לסכם את השיחה בדיוק כפי שהיא — בלי עיגול פינות.
 
-חוקי ציון חשובים:
-- ציון 1-3: תגובה שלילית חזקה, התנגדות רחבה, לא כדאי להמשיך
-- ציון 4-5: ספקנות משמעותית, בעיות רציניות שצריך לפתור
-- ציון 6-7: תגובה מעורבת, פוטנציאל אבל עם מגבלות
-- ציון 8-9: תגובה חיובית חזקה עם הסתייגויות קטנות
-- ציון 10: התלהבות מאסיבית (נדיר מאוד)
+סולם ציון אמיתי — עם דוגמאות:
+• 1-2: שלילי מוחלט. דוגמה: "פיצה בלי גבינה", "להעלות מחיר פי 3". כמעט אין תומכים.
+• 3-4: התנגדות חזקה. דוגמה: "פיצה בלי עגבניות", "ביטול עסקאות שישי". רוב מתנגדים בחריפות.
+• 5: מעורב שלילי. חצי מתנגדים, חצי אדישים. אין נלהבים.
+• 6: מעורב. יש גם וגם, אבל ללא התלהבות.
+• 7: מעורב חיובי. יותר חיובי מאשר שלילי, יש חששות.
+• 8-9: חיובי חזק. דוגמה: פיצה שווארמה, מחיר סביר, קשרות גבוהה. רוב נלהבים עם הסתייגויות קטנות.
+• 10: פגיעה בול. נדיר מאוד — כולם נלהבים ללא עוררין.
 
-**אסור לך לתת 6 רק כי זה "בטוח". תן את הציון האמיתי שעולה מהשיחה.**
-אם רוב המשתתפים ספקניים — תן 3-4. אם רוב נלהבים — תן 8-9.
+⚠️ כלל ברזל: אם השאלה נוגעת להסרת מרכיב בסיסי (גבינה, בצק, רוטב), לעליית מחיר דרסטית, או לשינוי שפוגע בלב המוצר — הציון לא יכול להיות מעל 4.
+⚠️ אם רוב המשתתפים אדישים או מבקרים — ציון מקסימלי 5.
+⚠️ ציון 6 מותר רק אם יש שוויון אמיתי בין תומכים למתנגדים.
 
 החזר JSON בלבד: {"verdict":"חיובי/שלילי/מעורב","score":מספר_בין_1_ל_10,"mainInsight":"תובנה_מרכזית_אחת","pros":["יתרון1","יתרון2"],"cons":["חיסרון1","חיסרון2"],"segments":{"supporters":["שמות"],"opponents":["שמות"]},"recommendation":"המלצה_ישירה_לפיצה_האט"}`,
           messages: [{ role: "user", content: `שאלה: "${question}"\n${parsed.map(m => `${m.speaker}: ${m.text}`).join("\n")}` }] })
@@ -197,51 +212,45 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
 
   // ── EXPERT WITH WEB SEARCH ──
   const runExpert = async (expert) => {
-    const q = expertQuestion || question
-    if (!q.trim()) return
+    const q = (expertQuestion && expertQuestion.trim()) ? expertQuestion.trim() : question.trim()
+    if (!q) return
+    const searchTopic = expert.searchQuery || "pizza trends 2025"
     setExpertAnswers(prev => ({ ...prev, [expert.id]: { status: "searching", text: "" } }))
     try {
-      // Single API call with web_search tool — let Claude search + answer together
-      // Use haiku to stay within token limits
+      const userMsg = `חפש ברשת טרנדים עדכניים ב-2025 בנושא: "${searchTopic}".
+לאחר החיפוש, ענה בעברית על השאלה הבאה מהזווית המקצועית שלך כ${expert.nameHe}: "${q}"
+ענה ב-4-5 משפטים. כלול נתון/טרנד ספציפי שמצאת ברשת.`
+
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST", headers: apiHeaders,
         body: JSON.stringify({
           model: "claude-haiku-4-5-20251001",
           max_tokens: 800,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
-          system: expert.systemPrompt,
-          messages: [{
-            role: "user",
-            content: `חפש טרנדים עדכניים ב-2025 על: ${expert.searchPrompt}
-אחר כך ענה בעברית על השאלה: "${q}"
-ענה ב-3-4 משפטים בלבד.`
-          }]
+          system: `אתה ${expert.nameHe} (${expert.name}), ${expert.title}. ${expert.personality} ענה תמיד בעברית.`,
+          messages: [{ role: "user", content: userMsg }]
         })
       })
 
       const data = await res.json()
       if (data.error) throw new Error(data.error.message)
-
       setExpertAnswers(prev => ({ ...prev, [expert.id]: { ...prev[expert.id], status: "thinking" } }))
 
-      // Extract text from response (may include tool_use blocks)
       const textBlocks = (data.content || []).filter(b => b.type === "text")
 
-      // If Claude used tool and stopped, do a follow-up
       if (textBlocks.length === 0 && data.stop_reason === "tool_use") {
+        // Claude did a search — now get the answer
         const toolUseBlocks = data.content.filter(b => b.type === "tool_use")
         const followRes = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST", headers: apiHeaders,
           body: JSON.stringify({
             model: "claude-haiku-4-5-20251001",
             max_tokens: 600,
-            system: expert.systemPrompt,
+            system: `אתה ${expert.nameHe} (${expert.name}), ${expert.title}. ${expert.personality} ענה תמיד בעברית.`,
             messages: [
-              { role: "user", content: `חפש טרנדים עדכניים ב-2025 על: ${expert.searchPrompt}
-אחר כך ענה בעברית על השאלה: "${q}"
-ענה ב-3-4 משפטים בלבד.` },
+              { role: "user", content: userMsg },
               { role: "assistant", content: data.content },
-              { role: "user", content: toolUseBlocks.map(b => ({ type: "tool_result", tool_use_id: b.id, content: "תוצאות החיפוש מוכנות" })) }
+              { role: "user", content: toolUseBlocks.map(b => ({ type: "tool_result", tool_use_id: b.id, content: "תוצאות החיפוש זמינות" })) }
             ]
           })
         })
@@ -250,10 +259,9 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
         const finalText = (followData.content || []).find(b => b.type === "text")?.text || "לא התקבלה תשובה"
         setExpertAnswers(prev => ({ ...prev, [expert.id]: { status: "done", text: finalText } }))
       } else {
-        const finalText = textBlocks.map(b => b.text).join(" ") || "לא התקבלה תשובה"
+        const finalText = textBlocks.map(b => b.text).join("\n") || "לא התקבלה תשובה"
         setExpertAnswers(prev => ({ ...prev, [expert.id]: { status: "done", text: finalText } }))
       }
-
     } catch (e) {
       console.error("Expert error:", e)
       setExpertAnswers(prev => ({ ...prev, [expert.id]: { status: "error", text: "שגיאה: " + e.message } }))
@@ -262,12 +270,38 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
 
   const runAllExperts = async () => {
     setExpertsRunning(true)
-    // Sequential — one at a time to avoid 429 rate limit
+    setExpertSummary(null)
     for (const expert of EXPERT_PERSONAS) {
       await runExpert(expert)
-      // Wait 2 seconds between experts to avoid rate limiting
-      await new Promise(res => setTimeout(res, 4000))
+      await new Promise(res => setTimeout(res, 3000))
     }
+    // Generate expert summary with scores
+    const q = (expertQuestion && expertQuestion.trim()) ? expertQuestion.trim() : question.trim()
+    try {
+      const answers = EXPERT_PERSONAS.map(e => {
+        const ans = expertAnswers[e.id]
+        return ans?.text ? `${e.nameHe} (${e.region}): ${ans.text}` : null
+      }).filter(Boolean).join("\n\n")
+
+      if (answers) {
+        const sumRes = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST", headers: apiHeaders,
+          body: JSON.stringify({
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 600,
+            system: `סכם חוות דעת מומחים בינלאומיים לפיצה. החזר JSON בלבד:
+{"globalTrend":"טרנד עולמי מרכזי","scores":{"marco":1-10,"jessica":1-10,"kenji":1-10,"sarah":1-10},"consensus":"האם יש קונצנזוס בין המומחים","recommendation":"המלצה לפיצה האט מהזווית הבינלאומית"}`,
+            messages: [{ role: "user", content: `שאלה: "${q}"\n\nחוות דעת המומחים:\n${answers}` }]
+          })
+        })
+        const sumData = await sumRes.json()
+        const sumText = sumData.content?.find(b => b.type === "text")?.text
+        if (sumText) {
+          try { setExpertSummary(JSON.parse(sumText.replace(/\`\`\`json|\`\`\`/g,"").trim())) }
+          catch { console.log("Expert summary parse error") }
+        }
+      }
+    } catch(e) { console.error("Expert summary error", e) }
     setExpertsRunning(false)
   }
 
@@ -556,6 +590,55 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
             )
           })}
         </div>
+
+        {/* Expert Summary */}
+        {expertSummary && (
+          <div style={{ marginTop: 28, background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,215,0,0.3)", borderRadius: 16, padding: 24, animation: "fadeIn 0.5s ease" }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#ffd700", marginBottom: 20 }}>🌍 סיכום פאנל מומחים בינלאומיים</div>
+
+            {/* Trend */}
+            <div style={{ background: "rgba(255,215,0,0.08)", borderRadius: 10, padding: "12px 16px", marginBottom: 16, borderRight: "3px solid #ffd700" }}>
+              <div style={{ fontSize: 11, color: "#ffd700", fontWeight: 700, marginBottom: 4 }}>טרנד עולמי מרכזי</div>
+              <div style={{ fontSize: 14, color: "#eee", lineHeight: 1.6 }}>{expertSummary.globalTrend}</div>
+            </div>
+
+            {/* Scores */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 10, marginBottom: 16 }}>
+              {EXPERT_PERSONAS.map(e => {
+                const score = expertSummary.scores?.[e.id]
+                const scoreColor = score >= 8 ? "#2ecc71" : score >= 6 ? "#f39c12" : "#e74c3c"
+                return (
+                  <div key={e.id} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "12px", textAlign: "center" }}>
+                    <div style={{ fontSize: 20, marginBottom: 4 }}>{e.icon}</div>
+                    <div style={{ fontSize: 11, color: "#aaa", marginBottom: 4 }}>{e.nameHe}</div>
+                    <div style={{ fontSize: 24, fontWeight: 900, color: scoreColor }}>{score || "?"}<span style={{ fontSize: 12, color: "#555" }}>/10</span></div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Consensus */}
+            <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "12px 16px", marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: "#888", fontWeight: 700, marginBottom: 4 }}>קונצנזוס בינלאומי</div>
+              <div style={{ fontSize: 14, color: "#eee" }}>{expertSummary.consensus}</div>
+            </div>
+
+            {/* Recommendation */}
+            <div style={{ background: "rgba(255,107,53,0.08)", border: "1px solid rgba(255,107,53,0.2)", borderRadius: 10, padding: "12px 16px" }}>
+              <div style={{ fontSize: 11, color: "#ff6b35", fontWeight: 700, marginBottom: 4 }}>המלצה לפיצה האט מהזווית הבינלאומית</div>
+              <div style={{ fontSize: 14, color: "#fff" }}>{expertSummary.recommendation}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Reset */}
+        {Object.keys(expertAnswers).length > 0 && (
+          <button onClick={() => { setExpertAnswers({}); setExpertSummary(null) }}
+            style={{ marginTop: 16, width: "100%", padding: "10px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#666", cursor: "pointer", fontSize: 13 }}>
+            ← שאלה חדשה למומחים
+          </button>
+        )}
+      </div>
       )}
 
       <style>{`
