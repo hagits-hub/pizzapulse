@@ -608,11 +608,14 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
             <div style={{ fontSize: 13, color: "#ccc", lineHeight: 1.8, borderTop: "1px solid rgba(180,140,60,0.2)", paddingTop: 14 }}>
               מארקו פראטי הוא שף ומבקר פיצה מוביל מנאפולי בן 47, עם למעלה מ-20 שנות ניסיון בתעשייה. חבר מוסמך באיגוד הפיצה הנאפוליטנית האמיתית (AVPN) וכותב עמודת הביקורת של כתב העת הגסטרונומי הנחשב Gambero Rosso. מארקו מסייר ברחבי אירופה, בוחן פיצריות ומייעץ לרשתות בינלאומיות. הוא בקיא לעומק בטרנדים הגלובליים של שוק הפיצה ב-2024-2025, ומביא זווית ביקורתית ומקצועית שמשלבת מסורת עם חדשנות.
             </div>
-          </div>
-            {expertAnswer?.status === "waiting" && <span style={{ marginRight: "auto", color: "#888", fontSize: 12, whiteSpace: "nowrap" }}>⏳ מחכה לאיפוס מכסה (62 שניות)...</span>}
-            {expertAnswer?.status === "searching" && <span style={{ marginRight: "auto", color: "#4fc3f7", fontSize: 12, whiteSpace: "nowrap" }}>🔍 מחפש ברשת...</span>}
-            {expertAnswer?.status === "thinking" && <span style={{ marginRight: "auto", color: "#f39c12", fontSize: 12, whiteSpace: "nowrap" }}>💭 מנתח...</span>}
-            {expertAnswer?.status === "done" && <span style={{ marginRight: "auto", background: "#2ecc7122", color: "#2ecc71", fontSize: 11, padding: "3px 10px", borderRadius: 10, border: "1px solid #2ecc7144", whiteSpace: "nowrap" }}>✓ ניתוח מוכן</span>}
+            {expertAnswer?.status && (
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(180,140,60,0.2)", display: "flex", justifyContent: "flex-start" }}>
+                {expertAnswer.status === "waiting" && <span style={{ color: "#888", fontSize: 12 }}>⏳ מחכה לאיפוס מכסה (62 שניות)...</span>}
+                {expertAnswer.status === "searching" && <span style={{ color: "#4fc3f7", fontSize: 12 }}>🔍 מחפש ברשת...</span>}
+                {expertAnswer.status === "thinking" && <span style={{ color: "#f39c12", fontSize: 12 }}>💭 מנתח...</span>}
+                {expertAnswer.status === "done" && <span style={{ background: "#2ecc7122", color: "#2ecc71", fontSize: 11, padding: "3px 10px", borderRadius: 10, border: "1px solid #2ecc7144" }}>✓ ניתוח מוכן</span>}
+              </div>
+            )}
           </div>
 
           {/* Question input */}
