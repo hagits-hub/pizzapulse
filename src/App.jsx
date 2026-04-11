@@ -112,7 +112,7 @@ export default function App() {
 מידע על פיצה האט: רשת עם מעל 100 סניפים. כשרות רובין בירושלים ובני ברק. כשרות בית יוסף בגוש דן, שרון, דרום, צפון. סניפים ללא כשרות ביישובים ערביים.
 
 פרסונות:
-${chosen.map(p => p.name + " (" + p.age + ", " + p.location + ", " + p.religion + "): " + p.personality).join("\n")}
+${chosen.map(p => p.name + " " + p.age + ", " + p.location + ", " + p.religion).join(" | ")}
 
 חוקים:
 - כל פרסונה עונה משפט אחד בלבד — ישיר, אותנטי, בשפה שלה
@@ -124,9 +124,8 @@ ${chosen.map(p => p.name + " (" + p.age + ", " + p.location + ", " + p.religion 
     try {
       const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST", headers: apiHeaders,
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 8000, system: pollSys,
-          messages: [{ role: "user", content: `שאלה/הצעה: "${question}"
-תן תגובה של משפט אחד + ציון לכל אחת מ-${chosen.length} הפרסונות.` }] })
+        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 4000, system: pollSys,
+          messages: [{ role: "user", content: `שאלה: "${question}" — תן משפט + ציון לכל ${chosen.length} הפרסונות.` }] })
       })
       const d = await r.json()
       if (d.error) throw new Error(d.error.message)
