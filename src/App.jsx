@@ -341,6 +341,12 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
       }
     } catch (e) {
       console.error("Expert error:", e)
+      // If rate limit, wait and retry once
+      if (e.message && e.message.includes("rate limit")) {
+        setExpertAnswer({ status: "waiting", text: "", analysis: null })
+        await new Promise(res => setTimeout(res, 62000))
+        return runExpert()
+      }
       setExpertAnswer({ status: "error", text: "שגיאה: " + e.message, analysis: null })
     }
   }
@@ -540,6 +546,14 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
                 <div ref={bottomRef} />
               </div>
 
+              {running && messages.length === 0 && (
+                <div style={{ textAlign: "center", padding: "40px 20px", animation: "fadeIn 0.3s ease" }}>
+                  <div style={{ fontSize: 36, marginBottom: 16, animation: "spin 1.5s linear infinite", display: "inline-block" }}>🍕</div>
+                  <div style={{ color: "#ff6b35", fontWeight: 700, fontSize: 15, marginBottom: 8 }}>הסקר רץ...</div>
+                  <div style={{ color: "#666", fontSize: 13 }}>מייצר תגובות לכל {selected.length} המשתתפים</div>
+                </div>
+              )}
+
               {summary && (
                 <div style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,107,53,0.3)", borderRadius: 14, padding: 22, animation: "fadeIn 0.5s ease" }}>
                   <div style={{ fontSize: 15, fontWeight: 800, color: "#ff6b35", marginBottom: 18 }}>📊 תובנות שיווקיות</div>
@@ -585,6 +599,7 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
               <div style={{ fontSize: 12, color: "#aaa", marginBottom: 4 }}>מומחה פיצה אירופי | נאפולי, איטליה</div>
               <div style={{ fontSize: 11, color: "#888", lineHeight: 1.5 }}>כותב ל-Gambero Rosso · מתמחה בשוק האירופי · בקיא בטרנדים גלובליים · מחפש ברשת לפני כל תשובה</div>
             </div>
+            {expertAnswer?.status === "waiting" && <span style={{ marginRight: "auto", color: "#888", fontSize: 12, whiteSpace: "nowrap" }}>⏳ מחכה לאיפוס מכסה (62 שניות)...</span>}
             {expertAnswer?.status === "searching" && <span style={{ marginRight: "auto", color: "#4fc3f7", fontSize: 12, whiteSpace: "nowrap" }}>🔍 מחפש ברשת...</span>}
             {expertAnswer?.status === "thinking" && <span style={{ marginRight: "auto", color: "#f39c12", fontSize: 12, whiteSpace: "nowrap" }}>💭 מנתח...</span>}
             {expertAnswer?.status === "done" && <span style={{ marginRight: "auto", background: "#2ecc7122", color: "#2ecc71", fontSize: 11, padding: "3px 10px", borderRadius: 10, border: "1px solid #2ecc7144", whiteSpace: "nowrap" }}>✓ ניתוח מוכן</span>}
@@ -665,6 +680,7 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
       )}
       <style>{`
         @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
         * { box-sizing: border-box; }
         textarea::placeholder { color: #444; }
         ::-webkit-scrollbar { width: 5px; }
