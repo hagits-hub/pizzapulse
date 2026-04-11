@@ -84,6 +84,8 @@ export default function App() {
   const [expandedPersona, setExpandedPersona] = useState(null)
   const [expertAnswer, setExpertAnswer] = useState(null) // {status, text, analysis}
   const [expertSummary, setExpertSummary] = useState(null)
+  const [expertQuestion, setExpertQuestion] = useState("")
+  const [expertsRunning, setExpertsRunning] = useState(false)
   const bottomRef = useRef(null)
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }) }, [messages, typing])
@@ -125,8 +127,8 @@ ${chosen.map(p => `• ${p.name} (${p.age}, ${p.location}, ${p.religion}, ${p.jo
     try {
       const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST", headers: apiHeaders,
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 4000, system: pollSys,
-          messages: [{ role: "user", content: `שאלה: "${question}" — תן תגובה אותנטית ומפורטת לכל ${chosen.length} הפרסונות.` }] })
+        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 8000, system: pollSys,
+          messages: [{ role: "user", content: `שאלה: "${question}" — תן תגובה אותנטית ומפורטת לכל ${chosen.length} הפרסונות. חובה לענות על כולן ללא יוצא מן הכלל.` }] })
       })
       const d = await r.json()
       if (d.error) throw new Error(d.error.message)
