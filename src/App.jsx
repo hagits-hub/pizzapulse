@@ -289,45 +289,22 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
   const runExpert = async () => {
     const q = (expertQuestion && expertQuestion.trim()) ? expertQuestion.trim() : question.trim()
     if (!q) return
-    setExpertAnswer({ status: "searching", text: "", analysis: null })
+    setExpertAnswer({ status: "thinking", text: "", analysis: null })
     try {
-      // Step 1: search
-      const searchRes = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST", headers: apiHeaders,
         body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 500,
-          tools: [{ type: "web_search_20250305", name: "web_search" }],
-          messages: [{ role: "user", content: `pizza trends Europe 2025: ${q.substring(0,40)}` }]
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 700,
+          system: `אתה מארקו פראטי, מומחה פיצה מנאפולי. כותב ל-Gambero Rosso ומייעץ לרשתות בינלאומיות. בקיא בטרנדים עולמיים בפיצה 2024-2025. כתוב עברית רהוטה וטבעית. היה ישיר ודעתני.`,
+          messages: [{ role: "user", content: `ענה על: "${q}"
+החזר JSON בלבד:
+{"opinion":"3-4 משפטים בעברית רהוטה מהזווית האירופית-גלובלית","globalTrend":"טרנד עולמי רלוונטי אחד מ-2024-2025","score":מספר_1_עד_10,"pros":["יתרון1","יתרון2","יתרון3"],"cons":["חיסרון1","חיסרון2","חיסרון3"],"verdict":"חיובי/שלילי/מעורב"}` }]
         })
       })
-      const searchData = await searchRes.json()
-      if (searchData.error) throw new Error(searchData.error.message)
-      setExpertAnswer(prev => ({ ...prev, status: "thinking" }))
-
-      // Step 2: analyze
-      const toolUseBlocks = (searchData.content || []).filter(b => b.type === "tool_use")
-      const msgs = [
-        { role: "user", content: `pizza trends Europe 2025: ${q.substring(0,40)}` },
-        { role: "assistant", content: searchData.content }
-      ]
-      if (toolUseBlocks.length > 0) {
-        msgs.push({ role: "user", content: toolUseBlocks.map(b => ({ type: "tool_result", tool_use_id: b.id, content: "done" })) })
-      }
-      msgs.push({ role: "user", content: `ענה על: "${q}". החזר JSON: {"opinion":"3 משפטים עברית","globalTrend":"טרנד אחד","score":1-10,"pros":["א","ב","ג"],"cons":["א","ב","ג"],"verdict":"חיובי/שלילי/מעורב"}` })
-
-      const ansRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST", headers: apiHeaders,
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 500,
-          system: "אתה מארקו פראטי, מומחה פיצה מנאפולי. כתוב עברית רהוטה. היה ישיר.",
-          messages: msgs
-        })
-      })
-      const ansData = await ansRes.json()
-      if (ansData.error) throw new Error(ansData.error.message)
-      const rawText = (ansData.content || []).find(b => b.type === "text")?.text || ""
+      const data = await res.json()
+      if (data.error) throw new Error(data.error.message)
+      const rawText = (data.content || []).find(b => b.type === "text")?.text || ""
       try {
         const analysis = JSON.parse(rawText.replace(/```json|```/g, "").trim())
         setExpertAnswer({ status: "done", text: analysis.opinion, analysis })
@@ -583,7 +560,6 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
               <div style={{ fontSize: 12, color: "#aaa", marginBottom: 4 }}>מומחה פיצה אירופי | נאפולי, איטליה</div>
               <div style={{ fontSize: 11, color: "#888", lineHeight: 1.5 }}>כותב ל-Gambero Rosso · מתמחה בשוק האירופי · בקיא בטרנדים גלובליים · מחפש ברשת לפני כל תשובה</div>
             </div>
-            {expertAnswer?.status === "searching" && <span style={{ marginRight: "auto", color: "#4fc3f7", fontSize: 12, whiteSpace: "nowrap" }}>🔍 מחפש ברשת...</span>}
             {expertAnswer?.status === "thinking" && <span style={{ marginRight: "auto", color: "#f39c12", fontSize: 12, whiteSpace: "nowrap" }}>💭 מנתח...</span>}
             {expertAnswer?.status === "done" && <span style={{ marginRight: "auto", background: "#2ecc7122", color: "#2ecc71", fontSize: 11, padding: "3px 10px", borderRadius: 10, border: "1px solid #2ecc7144", whiteSpace: "nowrap" }}>✓ ניתוח מוכן</span>}
           </div>
@@ -600,7 +576,7 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
             )}
             <button onClick={runAllExperts} disabled={expertsRunning || (!expertQuestion.trim() && !question.trim())}
               style={{ width: "100%", padding: 13, background: expertsRunning ? "#1a1a1a" : "linear-gradient(135deg,#7d5a00,#e8b84b)", border: "none", borderRadius: 10, color: expertsRunning ? "#444" : "#000", fontSize: 15, fontWeight: 800, cursor: expertsRunning ? "not-allowed" : "pointer" }}>
-              {expertsRunning ? "⏳ מארקו מחפש ברשת..." : "🌐 שלח למארקו + חיפוש ברשת"}
+              {expertsRunning ? "⏳ מארקו מנתח..." : "🇮🇹 שלח למארקו"}
             </button>
           </div>
 
