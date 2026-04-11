@@ -245,7 +245,12 @@ IMPORTANT: Answer in Hebrew (עברית). Be specific about global trends you fo
 
   const runAllExperts = async () => {
     setExpertsRunning(true)
-    await Promise.all(EXPERT_PERSONAS.map(e => runExpert(e)))
+    // Sequential — one at a time to avoid 429 rate limit
+    for (const expert of EXPERT_PERSONAS) {
+      await runExpert(expert)
+      // Wait 2 seconds between experts to avoid rate limiting
+      await new Promise(res => setTimeout(res, 2000))
+    }
     setExpertsRunning(false)
   }
 
