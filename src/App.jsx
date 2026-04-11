@@ -112,8 +112,7 @@ export default function App() {
 מידע על פיצה האט: רשת עם מעל 100 סניפים. כשרות רובין בירושלים ובני ברק. כשרות בית יוסף בגוש דן, שרון, דרום, צפון. סניפים ללא כשרות ביישובים ערביים.
 
 פרסונות:
-${chosen.map(p => `${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.personality}`).join("
-")}
+${chosen.map(p => p.name + " (" + p.age + ", " + p.location + ", " + p.religion + "): " + p.personality).join("\n")}
 
 חוקים:
 - כל פרסונה עונה משפט אחד בלבד — ישיר, אותנטי, בשפה שלה
