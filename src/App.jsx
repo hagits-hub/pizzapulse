@@ -350,28 +350,6 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
   }
 
 
-      if (answers) {
-        const sumRes = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST", headers: apiHeaders,
-          body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 400,
-            system: `סכם חוות דעת מומחים בינלאומיים לפיצה. החזר JSON בלבד:
-{"globalTrend":"טרנד עולמי מרכזי","scores":{"marco":1-10,"jessica":1-10,"kenji":1-10,"sarah":1-10},"consensus":"האם יש קונצנזוס בין המומחים","recommendation":"המלצה לפיצה האט מהזווית הבינלאומית"}`,
-            messages: [{ role: "user", content: `שאלה: "${q}"\n\nחוות דעת המומחים:\n${answers}` }]
-          })
-        })
-        const sumData = await sumRes.json()
-        const sumText = sumData.content?.find(b => b.type === "text")?.text
-        if (sumText) {
-          try { setExpertSummary(JSON.parse(sumText.replace(/\`\`\`json|\`\`\`/g,"").trim())) }
-          catch { console.log("Expert summary parse error") }
-        }
-      }
-    } catch(e) { console.error("Expert summary error", e) }
-    setExpertsRunning(false)
-  }
-
   if (!apiKey) return <ApiKeySetup onSuccess={(k) => { sessionStorage.setItem("ppApiKey", k); setApiKey(k) }} />
 
   const vColor = summary?.verdict === "חיובי" ? "#2ecc71" : summary?.verdict === "שלילי" ? "#e74c3c" : "#f39c12"
