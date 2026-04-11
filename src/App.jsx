@@ -15,7 +15,7 @@ function ApiKeySetup({ onSuccess }) {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": key.trim(), "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-        body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 10, messages: [{ role: "user", content: "say ok" }] })
+        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 10, messages: [{ role: "user", content: "say ok" }] })
       })
       const data = await res.json()
       if (data.error) { setErrorMsg(data.error.message || "מפתח לא תקין"); setStatus("error") }
@@ -214,59 +214,53 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
   const runExpert = async (expert) => {
     const q = (expertQuestion && expertQuestion.trim()) ? expertQuestion.trim() : question.trim()
     if (!q) return
-    const searchTopic = expert.searchQuery || "pizza trends 2025"
     setExpertAnswers(prev => ({ ...prev, [expert.id]: { status: "searching", text: "" } }))
     try {
-      const userMsg = `חפש מידע על: ${searchTopic} 2025.
-לאחר מכן ענה על השאלה הבאה: "${q}"
-
-חוקים חשובים לתשובה:
-- כתוב בעברית טבעית ורהוטה — כאילו דובר עברית שפת אם
-- אל תתרגם מאנגלית — חשוב ישירות בעברית
-- 3-4 משפטים בלבד
-- ציין טרנד ספציפי אחד שמצאת ברשת
-- היה חד ודעתני — לא מאוזן ולא דיפלומטי`
-
+      // Single call — model searches and answers in one shot, minimal tokens
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST", headers: apiHeaders,
         body: JSON.stringify({
           model: "claude-haiku-4-5-20251001",
-          max_tokens: 500,
+          max_tokens: 400,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
-          system: `אתה ${expert.nameHe}, ${expert.title}. אתה מדבר עברית שוטפת כשפת אם. אל תתרגם מאנגלית — נסח ישירות בעברית. סגנון: ישיר, מקצועי, ישראלי.`,
-          messages: [{ role: "user", content: userMsg }]
+          system: `אתה ${expert.nameHe}, מומחה פיצה בינלאומי. כתוב עברית רהוטה וטבעית. היה ישיר ודעתני.`,
+          messages: [{
+            role: "user",
+            content: `${expert.searchQuery} 2025 trends. שאלה: "${q}" — ענה 3 משפטים בעברית תקינה, ציין טרנד אחד עדכני.`
+          }]
         })
       })
-
       const data = await res.json()
       if (data.error) throw new Error(data.error.message)
       setExpertAnswers(prev => ({ ...prev, [expert.id]: { ...prev[expert.id], status: "thinking" } }))
 
+      // Get text — if model searched and stopped, continue the conversation
       const textBlocks = (data.content || []).filter(b => b.type === "text")
+      if (textBlocks.length > 0) {
+        setExpertAnswers(prev => ({ ...prev, [expert.id]: { status: "done", text: textBlocks.map(b => b.text).join(" ") } }))
+        return
+      }
 
-      if (textBlocks.length === 0 && data.stop_reason === "tool_use") {
-        // Claude did a search — now get the answer
+      // Model used search tool — send back only tool_use IDs (no search results content to save tokens)
+      if (data.stop_reason === "tool_use") {
         const toolUseBlocks = data.content.filter(b => b.type === "tool_use")
         const followRes = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST", headers: apiHeaders,
           body: JSON.stringify({
             model: "claude-haiku-4-5-20251001",
-            max_tokens: 400,
-            system: `אתה ${expert.nameHe}, ${expert.title}. אתה מדבר עברית שוטפת כשפת אם. אל תתרגם מאנגלית — נסח ישירות בעברית. סגנון: ישיר, מקצועי, ישראלי.`,
+            max_tokens: 350,
+            system: `אתה ${expert.nameHe}, מומחה פיצה. כתוב עברית רהוטה. 3 משפטים בלבד.`,
             messages: [
-              { role: "user", content: userMsg },
-              { role: "assistant", content: data.content },
-              { role: "user", content: toolUseBlocks.map(b => ({ type: "tool_result", tool_use_id: b.id, content: "תוצאות החיפוש זמינות" })) }
+              { role: "user", content: `${expert.searchQuery} 2025 trends. שאלה: "${q}" — ענה 3 משפטים.` },
+              { role: "assistant", content: data.content.filter(b => b.type === "tool_use") },
+              { role: "user", content: toolUseBlocks.map(b => ({ type: "tool_result", tool_use_id: b.id, content: "בוצע חיפוש" })) }
             ]
           })
         })
         const followData = await followRes.json()
         if (followData.error) throw new Error(followData.error.message)
-        const finalText = (followData.content || []).find(b => b.type === "text")?.text || "לא התקבלה תשובה"
-        setExpertAnswers(prev => ({ ...prev, [expert.id]: { status: "done", text: finalText } }))
-      } else {
-        const finalText = textBlocks.map(b => b.text).join("\n") || "לא התקבלה תשובה"
-        setExpertAnswers(prev => ({ ...prev, [expert.id]: { status: "done", text: finalText } }))
+        const text = (followData.content || []).find(b => b.type === "text")?.text || "לא התקבלה תשובה"
+        setExpertAnswers(prev => ({ ...prev, [expert.id]: { status: "done", text } }))
       }
     } catch (e) {
       console.error("Expert error:", e)
@@ -279,7 +273,7 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
     setExpertSummary(null)
     for (const expert of EXPERT_PERSONAS) {
       await runExpert(expert)
-      await new Promise(res => setTimeout(res, 35000))
+      await new Promise(res => setTimeout(res, 62000))
     }
     // Generate expert summary with scores
     const q = (expertQuestion && expertQuestion.trim()) ? expertQuestion.trim() : question.trim()
@@ -293,7 +287,7 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
         const sumRes = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST", headers: apiHeaders,
           body: JSON.stringify({
-            model: "claude-haiku-4-5-20251001",
+            model: "claude-sonnet-4-20250514",
             max_tokens: 400,
             system: `סכם חוות דעת מומחים בינלאומיים לפיצה. החזר JSON בלבד:
 {"globalTrend":"טרנד עולמי מרכזי","scores":{"marco":1-10,"jessica":1-10,"kenji":1-10,"sarah":1-10},"consensus":"האם יש קונצנזוס בין המומחים","recommendation":"המלצה לפיצה האט מהזווית הבינלאומית"}`,
