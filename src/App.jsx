@@ -591,56 +591,46 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
           })}
         </div>
 
-        {/* Expert Summary */}
-        {expertSummary && (
-          <div style={{ marginTop: 28, background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,215,0,0.3)", borderRadius: 16, padding: 24, animation: "fadeIn 0.5s ease" }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "#ffd700", marginBottom: 20 }}>🌍 סיכום פאנל מומחים בינלאומיים</div>
-
-            {/* Trend */}
-            <div style={{ background: "rgba(255,215,0,0.08)", borderRadius: 10, padding: "12px 16px", marginBottom: 16, borderRight: "3px solid #ffd700" }}>
-              <div style={{ fontSize: 11, color: "#ffd700", fontWeight: 700, marginBottom: 4 }}>טרנד עולמי מרכזי</div>
-              <div style={{ fontSize: 14, color: "#eee", lineHeight: 1.6 }}>{expertSummary.globalTrend}</div>
+          {/* Expert Summary */}
+          {expertSummary && (
+            <div style={{ marginTop: 28, background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,215,0,0.3)", borderRadius: 16, padding: 24, animation: "fadeIn 0.5s ease" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#ffd700", marginBottom: 20 }}>🌍 סיכום פאנל מומחים בינלאומיים</div>
+              <div style={{ background: "rgba(255,215,0,0.08)", borderRadius: 10, padding: "12px 16px", marginBottom: 16, borderRight: "3px solid #ffd700" }}>
+                <div style={{ fontSize: 11, color: "#ffd700", fontWeight: 700, marginBottom: 4 }}>טרנד עולמי מרכזי</div>
+                <div style={{ fontSize: 14, color: "#eee", lineHeight: 1.6 }}>{expertSummary.globalTrend}</div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 10, marginBottom: 16 }}>
+                {EXPERT_PERSONAS.map(e => {
+                  const score = expertSummary.scores?.[e.id]
+                  const scoreColor = score >= 8 ? "#2ecc71" : score >= 6 ? "#f39c12" : "#e74c3c"
+                  return (
+                    <div key={e.id} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "12px", textAlign: "center" }}>
+                      <div style={{ fontSize: 20, marginBottom: 4 }}>{e.icon}</div>
+                      <div style={{ fontSize: 11, color: "#aaa", marginBottom: 4 }}>{e.nameHe}</div>
+                      <div style={{ fontSize: 24, fontWeight: 900, color: scoreColor }}>{score || "?"}<span style={{ fontSize: 12, color: "#555" }}>/10</span></div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "12px 16px", marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: "#888", fontWeight: 700, marginBottom: 4 }}>קונצנזוס בינלאומי</div>
+                <div style={{ fontSize: 14, color: "#eee" }}>{expertSummary.consensus}</div>
+              </div>
+              <div style={{ background: "rgba(255,107,53,0.08)", border: "1px solid rgba(255,107,53,0.2)", borderRadius: 10, padding: "12px 16px" }}>
+                <div style={{ fontSize: 11, color: "#ff6b35", fontWeight: 700, marginBottom: 4 }}>המלצה לפיצה האט מהזווית הבינלאומית</div>
+                <div style={{ fontSize: 14, color: "#fff" }}>{expertSummary.recommendation}</div>
+              </div>
             </div>
+          )}
 
-            {/* Scores */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 10, marginBottom: 16 }}>
-              {EXPERT_PERSONAS.map(e => {
-                const score = expertSummary.scores?.[e.id]
-                const scoreColor = score >= 8 ? "#2ecc71" : score >= 6 ? "#f39c12" : "#e74c3c"
-                return (
-                  <div key={e.id} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "12px", textAlign: "center" }}>
-                    <div style={{ fontSize: 20, marginBottom: 4 }}>{e.icon}</div>
-                    <div style={{ fontSize: 11, color: "#aaa", marginBottom: 4 }}>{e.nameHe}</div>
-                    <div style={{ fontSize: 24, fontWeight: 900, color: scoreColor }}>{score || "?"}<span style={{ fontSize: 12, color: "#555" }}>/10</span></div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Consensus */}
-            <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "12px 16px", marginBottom: 12 }}>
-              <div style={{ fontSize: 11, color: "#888", fontWeight: 700, marginBottom: 4 }}>קונצנזוס בינלאומי</div>
-              <div style={{ fontSize: 14, color: "#eee" }}>{expertSummary.consensus}</div>
-            </div>
-
-            {/* Recommendation */}
-            <div style={{ background: "rgba(255,107,53,0.08)", border: "1px solid rgba(255,107,53,0.2)", borderRadius: 10, padding: "12px 16px" }}>
-              <div style={{ fontSize: 11, color: "#ff6b35", fontWeight: 700, marginBottom: 4 }}>המלצה לפיצה האט מהזווית הבינלאומית</div>
-              <div style={{ fontSize: 14, color: "#fff" }}>{expertSummary.recommendation}</div>
-            </div>
-          </div>
-        )}
-
-        {/* Reset */}
-        {Object.keys(expertAnswers).length > 0 && (
-          <button onClick={() => { setExpertAnswers({}); setExpertSummary(null) }}
-            style={{ marginTop: 16, width: "100%", padding: "10px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#666", cursor: "pointer", fontSize: 13 }}>
-            ← שאלה חדשה למומחים
-          </button>
-        )}
-      </div>
+          {Object.keys(expertAnswers).length > 0 && (
+            <button onClick={() => { setExpertAnswers({}); setExpertSummary(null) }}
+              style={{ marginTop: 16, width: "100%", padding: "10px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#666", cursor: "pointer", fontSize: 13 }}>
+              ← שאלה חדשה למומחים
+            </button>
+          )}
+        </div>
       )}
-
       <style>{`
         @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
         * { box-sizing: border-box; }
