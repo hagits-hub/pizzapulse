@@ -592,13 +592,23 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "28px 20px" }}>
 
           {/* Expert profile */}
-          <div style={{ display: "flex", gap: 16, alignItems: "center", background: "rgba(180,140,60,0.1)", border: "1px solid rgba(180,140,60,0.3)", borderRadius: 16, padding: 20, marginBottom: 24 }}>
-            <div style={{ fontSize: 48 }}>🇮🇹</div>
-            <div>
-              <div style={{ fontWeight: 900, fontSize: 18, color: "#e8b84b" }}>מארקו פראטי</div>
-              <div style={{ fontSize: 12, color: "#aaa", marginBottom: 4 }}>מומחה פיצה אירופי | נאפולי, איטליה</div>
-              <div style={{ fontSize: 11, color: "#888", lineHeight: 1.5 }}>כותב ל-Gambero Rosso · מתמחה בשוק האירופי · בקיא בטרנדים גלובליים · מחפש ברשת לפני כל תשובה</div>
+          <div style={{ background: "rgba(180,140,60,0.1)", border: "1px solid rgba(180,140,60,0.3)", borderRadius: 16, padding: 24, marginBottom: 24 }}>
+            <div style={{ display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 16 }}>
+              <div style={{ fontSize: 52, flexShrink: 0 }}>🇮🇹</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 900, fontSize: 20, color: "#e8b84b", marginBottom: 2 }}>מארקו פראטי</div>
+                <div style={{ fontSize: 12, color: "#aaa", marginBottom: 8 }}>מומחה פיצה בינלאומי | נאפולי, איטליה</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {["Gambero Rosso", "AVPN", "20+ שנה ניסיון", "שוק אירופי", "טרנדים גלובליים"].map(tag => (
+                    <span key={tag} style={{ background: "rgba(180,140,60,0.15)", border: "1px solid rgba(180,140,60,0.3)", color: "#e8b84b", fontSize: 10, padding: "2px 8px", borderRadius: 10 }}>{tag}</span>
+                  ))}
+                </div>
+              </div>
             </div>
+            <div style={{ fontSize: 13, color: "#ccc", lineHeight: 1.8, borderTop: "1px solid rgba(180,140,60,0.2)", paddingTop: 14 }}>
+              מארקו פראטי הוא שף ומבקר פיצה מוביל מנאפולי בן 47, עם למעלה מ-20 שנות ניסיון בתעשייה. חבר מוסמך באיגוד הפיצה הנאפוליטנית האמיתית (AVPN) וכותב עמודת הביקורת של כתב העת הגסטרונומי הנחשב Gambero Rosso. מארקו מסייר ברחבי אירופה, בוחן פיצריות ומייעץ לרשתות בינלאומיות. הוא בקיא לעומק בטרנדים הגלובליים של שוק הפיצה ב-2024-2025, ומביא זווית ביקורתית ומקצועית שמשלבת מסורת עם חדשנות.
+            </div>
+          </div>
             {expertAnswer?.status === "waiting" && <span style={{ marginRight: "auto", color: "#888", fontSize: 12, whiteSpace: "nowrap" }}>⏳ מחכה לאיפוס מכסה (62 שניות)...</span>}
             {expertAnswer?.status === "searching" && <span style={{ marginRight: "auto", color: "#4fc3f7", fontSize: 12, whiteSpace: "nowrap" }}>🔍 מחפש ברשת...</span>}
             {expertAnswer?.status === "thinking" && <span style={{ marginRight: "auto", color: "#f39c12", fontSize: 12, whiteSpace: "nowrap" }}>💭 מנתח...</span>}
