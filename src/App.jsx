@@ -197,46 +197,63 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
 
   // ── EXPERT WITH WEB SEARCH ──
   const runExpert = async (expert) => {
-    setExpertAnswers(prev => ({ ...prev, [expert.id]: { status: "searching", text: "" } }))
     const q = expertQuestion || question
+    if (!q.trim()) return
+    setExpertAnswers(prev => ({ ...prev, [expert.id]: { status: "searching", text: "" } }))
     try {
-      // Step 1: web search for trends
-      const searchRes = await fetch("https://api.anthropic.com/v1/messages", {
+      // Single API call with web_search tool — let Claude search + answer together
+      // Use haiku to stay within token limits
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST", headers: apiHeaders,
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514", max_tokens: 2000,
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 800,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
-          messages: [{ role: "user", content: `Search for the latest pizza trends related to: ${expert.searchQuery}. Find current news from 2025.` }]
+          system: expert.systemPrompt,
+          messages: [{
+            role: "user",
+            content: `חפש טרנדים עדכניים ב-2025 על: ${expert.searchPrompt}
+אחר כך ענה בעברית על השאלה: "${q}"
+ענה ב-3-4 משפטים בלבד.`
+          }]
         })
       })
-      const searchData = await searchRes.json()
+
+      const data = await res.json()
+      if (data.error) throw new Error(data.error.message)
 
       setExpertAnswers(prev => ({ ...prev, [expert.id]: { ...prev[expert.id], status: "thinking" } }))
 
-      // Step 2: build messages with tool results
-      let msgs = [{ role: "user", content: `Search for the latest pizza trends related to: ${expert.searchQuery}. Find current news from 2025.` }]
-      msgs.push({ role: "assistant", content: searchData.content })
-      const toolUseBlocks = (searchData.content || []).filter(b => b.type === "tool_use")
-      if (toolUseBlocks.length > 0) {
-        msgs.push({ role: "user", content: toolUseBlocks.map(b => ({ type: "tool_result", tool_use_id: b.id, content: "Search completed, results available above." })) })
+      // Extract text from response (may include tool_use blocks)
+      const textBlocks = (data.content || []).filter(b => b.type === "text")
+
+      // If Claude used tool and stopped, do a follow-up
+      if (textBlocks.length === 0 && data.stop_reason === "tool_use") {
+        const toolUseBlocks = data.content.filter(b => b.type === "tool_use")
+        const followRes = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST", headers: apiHeaders,
+          body: JSON.stringify({
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 600,
+            system: expert.systemPrompt,
+            messages: [
+              { role: "user", content: `חפש טרנדים עדכניים ב-2025 על: ${expert.searchPrompt}
+אחר כך ענה בעברית על השאלה: "${q}"
+ענה ב-3-4 משפטים בלבד.` },
+              { role: "assistant", content: data.content },
+              { role: "user", content: toolUseBlocks.map(b => ({ type: "tool_result", tool_use_id: b.id, content: "תוצאות החיפוש מוכנות" })) }
+            ]
+          })
+        })
+        const followData = await followRes.json()
+        if (followData.error) throw new Error(followData.error.message)
+        const finalText = (followData.content || []).find(b => b.type === "text")?.text || "לא התקבלה תשובה"
+        setExpertAnswers(prev => ({ ...prev, [expert.id]: { status: "done", text: finalText } }))
+      } else {
+        const finalText = textBlocks.map(b => b.text).join(" ") || "לא התקבלה תשובה"
+        setExpertAnswers(prev => ({ ...prev, [expert.id]: { status: "done", text: finalText } }))
       }
 
-      // Step 3: get expert answer in Hebrew
-      msgs.push({ role: "user", content: `Based on your web search findings, answer this question as ${expert.name}, ${expert.title}:
-
-Question: "${q}"
-
-${expert.personality}
-
-IMPORTANT: Answer in Hebrew (עברית). Be specific about global trends you found. Mention actual data or examples. Be opinionated and professional. 3-4 paragraphs max.` })
-
-      const ansRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST", headers: apiHeaders,
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: msgs })
-      })
-      const ansData = await ansRes.json()
-      const ansText = ansData.content?.find(b => b.type === "text")?.text || "לא הצלחתי לקבל תשובה"
-      setExpertAnswers(prev => ({ ...prev, [expert.id]: { status: "done", text: ansText } }))
     } catch (e) {
       console.error("Expert error:", e)
       setExpertAnswers(prev => ({ ...prev, [expert.id]: { status: "error", text: "שגיאה: " + e.message } }))
@@ -249,7 +266,7 @@ IMPORTANT: Answer in Hebrew (עברית). Be specific about global trends you fo
     for (const expert of EXPERT_PERSONAS) {
       await runExpert(expert)
       // Wait 2 seconds between experts to avoid rate limiting
-      await new Promise(res => setTimeout(res, 2000))
+      await new Promise(res => setTimeout(res, 4000))
     }
     setExpertsRunning(false)
   }
