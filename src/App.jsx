@@ -84,8 +84,6 @@ export default function App() {
   const [expandedPersona, setExpandedPersona] = useState(null)
   const [expertAnswer, setExpertAnswer] = useState(null) // {status, text, analysis}
   const [expertSummary, setExpertSummary] = useState(null)
-  const [expertQuestion, setExpertQuestion] = useState("")
-  const [expertsRunning, setExpertsRunning] = useState(false)
   const bottomRef = useRef(null)
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }) }, [messages, typing])
@@ -115,10 +113,11 @@ export default function App() {
 ${chosen.map(p => p.name + " " + p.age + ", " + p.location + ", " + p.religion).join(" | ")}
 
 חוקים:
-- כל פרסונה עונה משפט אחד בלבד — ישיר, אותנטי, בשפה שלה
-- כל פרסונה נותנת ציון 1-10 (1=שונא, 10=אוהב מאוד)
-- ישראלים מדברים ישר — אם גרוע, אומרים גרוע
-- החזר JSON בלבד: [{"name":"שם","score":ציון,"text":"משפט אחד"}]
+- כל פרסונה עונה 2-3 משפטים — אמיתיים, ספציפיים, בשפה שלה
+- כל פרסונה נותנת ציון 1-10 (1=שונא מאוד, 10=אוהב מאוד)
+- ישראלים מדברים ישר וסוערים — מחיר, חוויה אישית, השוואה למתחרים
+- אסור להיות דיפלומטי — אם גרוע, אומרים גרוע בפירוש
+- החזר JSON בלבד: [{"name":"שם","score":ציון,"text":"2-3 משפטים"}]
 אל תוסיף כלום מחוץ ל-JSON`
 
     try {
@@ -286,25 +285,50 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
   }
 
   // ── EXPERT WITH WEB SEARCH ──
+
+
+
   const runExpert = async () => {
     const q = (expertQuestion && expertQuestion.trim()) ? expertQuestion.trim() : question.trim()
     if (!q) return
-    setExpertAnswer({ status: "thinking", text: "", analysis: null })
+    setExpertAnswer({ status: "searching", text: "", analysis: null })
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const searchRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST", headers: apiHeaders,
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          tools: [{ type: "web_search_20250305", name: "web_search" }],
+          messages: [{ role: "user", content: `pizza trends Europe global 2025: ${q.substring(0, 50)}` }]
+        })
+      })
+      const searchData = await searchRes.json()
+      if (searchData.error) throw new Error(searchData.error.message)
+      setExpertAnswer(prev => ({ ...prev, status: "thinking" }))
+
+      const toolUseBlocks = (searchData.content || []).filter(b => b.type === "tool_use")
+      const msgs = [
+        { role: "user", content: `pizza trends Europe global 2025: ${q.substring(0, 50)}` },
+        { role: "assistant", content: searchData.content }
+      ]
+      if (toolUseBlocks.length > 0) {
+        msgs.push({ role: "user", content: toolUseBlocks.map(b => ({ type: "tool_result", tool_use_id: b.id, content: "תוצאות זמינות" })) })
+      }
+      msgs.push({ role: "user", content: `בהתבסס על החיפוש, ענה על: "${q}". החזר JSON בלבד:
+{"opinion":"3-4 משפטים בעברית רהוטה","globalTrend":"טרנד עולמי רלוונטי שמצאת","score":מספר_1_עד_10,"pros":["יתרון1","יתרון2","יתרון3"],"cons":["חיסרון1","חיסרון2","חיסרון3"],"verdict":"חיובי/שלילי/מעורב"}` })
+
+      const ansRes = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST", headers: apiHeaders,
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 700,
-          system: `אתה מארקו פראטי, מומחה פיצה מנאפולי. כותב ל-Gambero Rosso ומייעץ לרשתות בינלאומיות. בקיא בטרנדים עולמיים בפיצה 2024-2025. כתוב עברית רהוטה וטבעית. היה ישיר ודעתני.`,
-          messages: [{ role: "user", content: `ענה על: "${q}"
-החזר JSON בלבד:
-{"opinion":"3-4 משפטים בעברית רהוטה מהזווית האירופית-גלובלית","globalTrend":"טרנד עולמי רלוונטי אחד מ-2024-2025","score":מספר_1_עד_10,"pros":["יתרון1","יתרון2","יתרון3"],"cons":["חיסרון1","חיסרון2","חיסרון3"],"verdict":"חיובי/שלילי/מעורב"}` }]
+          system: "אתה מארקו פראטי, מומחה פיצה מנאפולי. כותב ל-Gambero Rosso. כתוב עברית רהוטה וטבעית. היה ישיר ודעתני.",
+          messages: msgs
         })
       })
-      const data = await res.json()
-      if (data.error) throw new Error(data.error.message)
-      const rawText = (data.content || []).find(b => b.type === "text")?.text || ""
+      const ansData = await ansRes.json()
+      if (ansData.error) throw new Error(ansData.error.message)
+      const rawText = (ansData.content || []).find(b => b.type === "text")?.text || ""
       try {
         const analysis = JSON.parse(rawText.replace(/```json|```/g, "").trim())
         setExpertAnswer({ status: "done", text: analysis.opinion, analysis })
@@ -322,7 +346,6 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
     await runExpert()
     setExpertsRunning(false)
   }
-
 
   if (!apiKey) return <ApiKeySetup onSuccess={(k) => { sessionStorage.setItem("ppApiKey", k); setApiKey(k) }} />
 
@@ -347,9 +370,6 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
         <button style={S.navBtn(view === "focusgroup")} onClick={() => setView("focusgroup")}>
           קבוצת מיקוד{selected.length > 0 && <span style={S.badge}>{selected.length}</span>}
         </button>
-        <button style={S.navBtn(view === "experts")} onClick={() => setView("experts")}>
-          🌍 מומחה אירופי
-        </button>
       </nav>
 
       {/* ── HOME ── */}
@@ -364,7 +384,6 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
             {[
               { icon: "👥", title: `${ALL_PERSONAS.length} פרסונות`, desc: "חתך מלא של החברה הישראלית מבוסס נתוני הלמ\"ס" },
               { icon: "⚡", title: "תוצאות מיידיות", desc: "שיחת קבוצת מיקוד תוך שניות, ללא עלויות מחקר" },
-              { icon: "🌍", title: "4 מומחים עולמיים", desc: "מומחי פיצה מאיטליה, ארה\"ב, יפן ואוסטרליה עם גישה לאינטרנט" },
               { icon: "📊", title: "תובנות עסקיות", desc: "המלצות מותאמות לפיצה האט ישראל" },
             ].map(c => (
               <div key={c.title} style={{ background: "rgba(255,107,53,0.07)", border: "1px solid rgba(255,107,53,0.2)", borderRadius: 14, padding: 20 }}>
@@ -377,7 +396,6 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <button onClick={() => setView("personas")} style={{ flex: 1, minWidth: 160, padding: "14px", background: "linear-gradient(135deg,#c0392b,#ff6b35)", border: "none", borderRadius: 12, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 20px rgba(255,107,53,0.4)" }}>👥 פרסונות</button>
             <button onClick={() => setView("focusgroup")} style={{ flex: 1, minWidth: 160, padding: "14px", background: "rgba(255,107,53,0.12)", border: "1px solid #ff6b35", borderRadius: 12, color: "#ff6b35", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>🚀 קבוצת מיקוד</button>
-            <button onClick={() => setView("experts")} style={{ flex: 1, minWidth: 160, padding: "14px", background: "rgba(100,200,255,0.1)", border: "1px solid #4fc3f7", borderRadius: 12, color: "#4fc3f7", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>🌍 מומחים עולמיים</button>
           </div>
         </div>
       )}
@@ -560,6 +578,7 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
               <div style={{ fontSize: 12, color: "#aaa", marginBottom: 4 }}>מומחה פיצה אירופי | נאפולי, איטליה</div>
               <div style={{ fontSize: 11, color: "#888", lineHeight: 1.5 }}>כותב ל-Gambero Rosso · מתמחה בשוק האירופי · בקיא בטרנדים גלובליים · מחפש ברשת לפני כל תשובה</div>
             </div>
+            {expertAnswer?.status === "searching" && <span style={{ marginRight: "auto", color: "#4fc3f7", fontSize: 12, whiteSpace: "nowrap" }}>🔍 מחפש ברשת...</span>}
             {expertAnswer?.status === "thinking" && <span style={{ marginRight: "auto", color: "#f39c12", fontSize: 12, whiteSpace: "nowrap" }}>💭 מנתח...</span>}
             {expertAnswer?.status === "done" && <span style={{ marginRight: "auto", background: "#2ecc7122", color: "#2ecc71", fontSize: 11, padding: "3px 10px", borderRadius: 10, border: "1px solid #2ecc7144", whiteSpace: "nowrap" }}>✓ ניתוח מוכן</span>}
           </div>
@@ -576,7 +595,7 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
             )}
             <button onClick={runAllExperts} disabled={expertsRunning || (!expertQuestion.trim() && !question.trim())}
               style={{ width: "100%", padding: 13, background: expertsRunning ? "#1a1a1a" : "linear-gradient(135deg,#7d5a00,#e8b84b)", border: "none", borderRadius: 10, color: expertsRunning ? "#444" : "#000", fontSize: 15, fontWeight: 800, cursor: expertsRunning ? "not-allowed" : "pointer" }}>
-              {expertsRunning ? "⏳ מארקו מנתח..." : "🇮🇹 שלח למארקו"}
+              {expertsRunning ? "⏳ מארקו מחפש ברשת..." : "🌐 שלח למארקו + חיפוש ברשת"}
             </button>
           </div>
 
