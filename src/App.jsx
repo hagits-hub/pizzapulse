@@ -589,7 +589,6 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
               </div>
             )
           })}
-        </div>
 
           {/* Expert Summary */}
           {expertSummary && (
