@@ -325,8 +325,24 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
         method: "POST", headers: apiHeaders,
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 700,
-          system: "אתה מארקו פראטי, מומחה פיצה מנאפולי. כותב ל-Gambero Rosso. כתוב עברית רהוטה וטבעית. היה ישיר ודעתני.",
+          max_tokens: 2000,
+          system: `אתה מארקו פראטי, מומחה פיצה מנאפולי בן 47. כותב ל-Gambero Rosso ומייעץ לרשתות פיצה בינלאומיות. בעל ניסיון של 20 שנה בשוק הפיצה האירופי והגלובלי.
+
+כתוב עברית רהוטה וטבעית כשפת אם — אל תתרגם מאנגלית.
+היה ביקורתי, מעמיק ומקצועי. אל תהיה דיפלומטי.
+
+פורמט הניתוח — החזר JSON בלבד:
+{
+  "opinion": "ניתוח מקיף של 5-7 משפטים: מה דעתך על ההצעה מהזווית האירופית, האם זה כבר קיים בעולם, מה עבד ומה לא, האם זה מתאים לתרבות הפיצה הישראלית",
+  "globalTrend": "תאר טרנד עולמי ספציפי שמצאת שקשור להצעה — כולל דוגמה אמיתית ממדינה או רשת ספציפית",
+  "marketAnalysis": "ניתוח שוק: איפה זה עובד בעולם, מי קהל היעד, מה נתוני הצלחה/כישלון אם ידוע",
+  "israeliContext": "האם זה מתאים לשוק הישראלי? שיקולים של כשרות, תרבות, מחיר, תחרות",
+  "score": מספר_1_עד_10,
+  "pros": ["יתרון מפורט 1", "יתרון מפורט 2", "יתרון מפורט 3"],
+  "cons": ["חיסרון מפורט 1", "חיסרון מפורט 2", "חיסרון מפורט 3"],
+  "verdict": "חיובי/שלילי/מעורב",
+  "recommendation": "המלצה קונקרטית לפיצה האט ישראל — מה לעשות ומה לא לעשות"
+}`,
           messages: msgs
         })
       })
@@ -643,11 +659,24 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
               <div style={{ animation: "fadeIn 0.4s ease" }}>
                 {/* Opinion */}
                 <div style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(180,140,60,0.25)", borderRadius: 14, padding: 20, marginBottom: 16 }}>
-                  <div style={{ fontSize: 11, color: "#e8b84b", fontWeight: 700, marginBottom: 10 }}>💬 חוות דעת מארקו</div>
-                  <div style={{ fontSize: 14, color: "#eee", lineHeight: 1.8 }}>{a.opinion}</div>
+                  <div style={{ fontSize: 11, color: "#e8b84b", fontWeight: 700, marginBottom: 10 }}>💬 ניתוח מארקו</div>
+                  <div style={{ fontSize: 14, color: "#eee", lineHeight: 1.9, marginBottom: 14 }}>{a.opinion}</div>
                   {a.globalTrend && (
-                    <div style={{ marginTop: 12, background: "rgba(180,140,60,0.08)", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#ccc" }}>
-                      <span style={{ color: "#e8b84b", fontWeight: 700 }}>🌍 טרנד עולמי: </span>{a.globalTrend}
+                    <div style={{ background: "rgba(180,140,60,0.08)", borderRadius: 8, padding: "10px 14px", marginBottom: 10, borderRight: "3px solid #e8b84b" }}>
+                      <div style={{ fontSize: 10, color: "#e8b84b", fontWeight: 700, marginBottom: 4 }}>🌍 טרנד עולמי</div>
+                      <div style={{ fontSize: 13, color: "#ccc", lineHeight: 1.7 }}>{a.globalTrend}</div>
+                    </div>
+                  )}
+                  {a.marketAnalysis && (
+                    <div style={{ background: "rgba(79,195,247,0.06)", borderRadius: 8, padding: "10px 14px", marginBottom: 10, borderRight: "3px solid #4fc3f7" }}>
+                      <div style={{ fontSize: 10, color: "#4fc3f7", fontWeight: 700, marginBottom: 4 }}>📊 ניתוח שוק</div>
+                      <div style={{ fontSize: 13, color: "#ccc", lineHeight: 1.7 }}>{a.marketAnalysis}</div>
+                    </div>
+                  )}
+                  {a.israeliContext && (
+                    <div style={{ background: "rgba(255,107,53,0.06)", borderRadius: 8, padding: "10px 14px", borderRight: "3px solid #ff6b35" }}>
+                      <div style={{ fontSize: 10, color: "#ff6b35", fontWeight: 700, marginBottom: 4 }}>🇮🇱 התאמה לשוק הישראלי</div>
+                      <div style={{ fontSize: 13, color: "#ccc", lineHeight: 1.7 }}>{a.israeliContext}</div>
                     </div>
                   )}
                 </div>
@@ -676,6 +705,12 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
                   </div>
                 </div>
 
+                {a.recommendation && (
+                  <div style={{ background: "rgba(255,107,53,0.08)", border: "1px solid rgba(255,107,53,0.25)", borderRadius: 12, padding: 14, marginBottom: 16 }}>
+                    <div style={{ fontSize: 11, color: "#ff6b35", fontWeight: 700, marginBottom: 6 }}>🍕 המלצה לפיצה האט ישראל</div>
+                    <div style={{ fontSize: 13, color: "#fff", lineHeight: 1.7 }}>{a.recommendation}</div>
+                  </div>
+                )}
                 <button onClick={() => setExpertAnswer(null)}
                   style={{ width: "100%", padding: "10px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#666", cursor: "pointer", fontSize: 13 }}>
                   ← שאלה חדשה למארקו
