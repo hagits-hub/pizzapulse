@@ -217,17 +217,23 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
     const searchTopic = expert.searchQuery || "pizza trends 2025"
     setExpertAnswers(prev => ({ ...prev, [expert.id]: { status: "searching", text: "" } }))
     try {
-      const userMsg = `חפש ברשת טרנדים עדכניים ב-2025 בנושא: "${searchTopic}".
-לאחר החיפוש, ענה בעברית על השאלה הבאה מהזווית המקצועית שלך כ${expert.nameHe}: "${q}"
-ענה ב-4-5 משפטים. כלול נתון/טרנד ספציפי שמצאת ברשת.`
+      const userMsg = `חפש מידע על: ${searchTopic} 2025.
+לאחר מכן ענה על השאלה הבאה: "${q}"
+
+חוקים חשובים לתשובה:
+- כתוב בעברית טבעית ורהוטה — כאילו דובר עברית שפת אם
+- אל תתרגם מאנגלית — חשוב ישירות בעברית
+- 3-4 משפטים בלבד
+- ציין טרנד ספציפי אחד שמצאת ברשת
+- היה חד ודעתני — לא מאוזן ולא דיפלומטי`
 
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST", headers: apiHeaders,
         body: JSON.stringify({
           model: "claude-haiku-4-5-20251001",
-          max_tokens: 800,
+          max_tokens: 500,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
-          system: `אתה ${expert.nameHe} (${expert.name}), ${expert.title}. ${expert.personality} ענה תמיד בעברית.`,
+          system: `אתה ${expert.nameHe}, ${expert.title}. אתה מדבר עברית שוטפת כשפת אם. אל תתרגם מאנגלית — נסח ישירות בעברית. סגנון: ישיר, מקצועי, ישראלי.`,
           messages: [{ role: "user", content: userMsg }]
         })
       })
@@ -245,8 +251,8 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
           method: "POST", headers: apiHeaders,
           body: JSON.stringify({
             model: "claude-haiku-4-5-20251001",
-            max_tokens: 600,
-            system: `אתה ${expert.nameHe} (${expert.name}), ${expert.title}. ${expert.personality} ענה תמיד בעברית.`,
+            max_tokens: 400,
+            system: `אתה ${expert.nameHe}, ${expert.title}. אתה מדבר עברית שוטפת כשפת אם. אל תתרגם מאנגלית — נסח ישירות בעברית. סגנון: ישיר, מקצועי, ישראלי.`,
             messages: [
               { role: "user", content: userMsg },
               { role: "assistant", content: data.content },
@@ -273,7 +279,7 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
     setExpertSummary(null)
     for (const expert of EXPERT_PERSONAS) {
       await runExpert(expert)
-      await new Promise(res => setTimeout(res, 3000))
+      await new Promise(res => setTimeout(res, 35000))
     }
     // Generate expert summary with scores
     const q = (expertQuestion && expertQuestion.trim()) ? expertQuestion.trim() : question.trim()
@@ -288,7 +294,7 @@ ${chosen.map(p => `- ${p.name} (${p.age}, ${p.location}, ${p.religion}): ${p.per
           method: "POST", headers: apiHeaders,
           body: JSON.stringify({
             model: "claude-haiku-4-5-20251001",
-            max_tokens: 600,
+            max_tokens: 400,
             system: `סכם חוות דעת מומחים בינלאומיים לפיצה. החזר JSON בלבד:
 {"globalTrend":"טרנד עולמי מרכזי","scores":{"marco":1-10,"jessica":1-10,"kenji":1-10,"sarah":1-10},"consensus":"האם יש קונצנזוס בין המומחים","recommendation":"המלצה לפיצה האט מהזווית הבינלאומית"}`,
             messages: [{ role: "user", content: `שאלה: "${q}"\n\nחוות דעת המומחים:\n${answers}` }]
